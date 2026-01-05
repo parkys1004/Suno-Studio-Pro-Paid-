@@ -282,7 +282,7 @@ const INTRO_STYLES = [
 
 const ART_STYLES = [
   'Digital Art', 'Photorealistic', '3D Render', 'Oil Painting', 'Anime/Manga',
-  'Watercolor', 'Cyberpunk', 'Synthwave', 'Vaporwave',
+  'Watercolor', 'Cyberpunk', 'Steampunk', 'Synthwave', 'Vaporwave',
   'Pop Art', 'Minimalist', 'Abstract', 'Surrealism', 'Ukiyo-e',
   'Sketch/Pencil', 'Gothic', 'Renaissance', 'Pixel Art', 'Graffiti/Street Art'
 ];
@@ -779,7 +779,7 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
                 </section>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <h3 style={{ color: '#fbbf24', borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '15px' }}>2. 기획 (Concept Tab)</h3>
+                    <h3 style={{ color: '#fbbf24', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '15px' }}>2. 기획 (Concept Tab)</h3>
                     <p>곡의 주제와 방향성을 설정합니다.</p>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
                         <li><strong>AI 아이디어 팩:</strong> 장르에 어울리는 제목, 주제, 스타일을 AI가 추천해줍니다.</li>
@@ -788,7 +788,7 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
                 </section>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <h3 style={{ color: '#3b82f6', borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '15px' }}>3. 구조 설계 (Structure Tab)</h3>
+                    <h3 style={{ color: '#3b82f6', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '15px' }}>3. 구조 설계 (Structure Tab)</h3>
                     <p>곡의 흐름(Intro, Verse, Chorus 등)을 블록 단위로 설계합니다.</p>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
                         <li><strong>블록 편집:</strong> 각 파트의 설명(Description)을 수정하거나 순서를 변경할 수 있습니다.</li>
@@ -797,17 +797,16 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
                 </section>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <h3 style={{ color: '#10b981', borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '15px' }}>4. 가사 작업 (Lyrics Tab)</h3>
+                    <h3 style={{ color: '#10b981', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '15px' }}>4. 가사 작업 (Lyrics Tab)</h3>
                     <p>AI를 활용해 곡의 구조에 맞는 가사를 생성합니다.</p>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
                         <li><strong>Dance Optimization Mode:</strong> 댄서들이 박자를 세기 쉽도록 8-count 구조에 맞춰 가사를 생성합니다.</li>
-                        <li><strong>Internal LLM Mode:</strong> API 오류나 지연 시 즉시 모델 내부 로직으로 독창적인 가사를 작성합니다.</li>
                         <li><strong>AI 길이 자동 조절:</strong> 설정된 목표 시간(Duration)에 맞춰 가사의 분량을 자동으로 조절합니다.</li>
                     </ul>
                 </section>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <h3 style={{ color: '#8b5cf6', borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '15px' }}>5. 사운드 디자인 (Sound Tab)</h3>
+                    <h3 style={{ color: '#8b5cf6', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '15px' }}>5. 사운드 디자인 (Sound Tab)</h3>
                     <p>Suno.ai에서 사용할 프롬프트를 생성합니다.</p>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
                         <li><strong>장르별 프리셋:</strong> 선택한 장르에 최적화된 BPM, Key, 악기 구성을 불러옵니다.</li>
@@ -817,9 +816,9 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
                 </section>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <h3 style={{ color: '#ec4899', borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '15px' }}>6. 아트 & 배포 (Art & Export)</h3>
+                    <h3 style={{ color: '#ec4899', borderBottom: '1px solid #374151', paddingBottom: '8px', marginBottom: '15px' }}>6. 아트 & 배포 (Art & Export)</h3>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
-                        <li><strong>Art:</strong> 곡의 분위기에 어울리는 앨범 커버를 생성하고, 텍스트가 포함된 최종 이미지를 다운로드합니다.</li>
+                        <li><strong>Art:</strong> 곡의 분위기에 어울리는 앨범 커버를 생성합니다.</li>
                         <li><strong>Export:</strong> 작업한 프로젝트를 JSON으로 백업하거나, 메타데이터 초안(제목, 가사, 태그 등)을 자동 생성하여 복사할 수 있습니다.</li>
                     </ul>
                 </section>
@@ -1471,7 +1470,6 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
   const [language, setLanguage] = useState('Korean & English Mix');
   const [lyricLength, setLyricLength] = useState('Standard (~3:00)');
   const [isDanceMode, setIsDanceMode] = useState(false);
-  const [isInternalOnlyMode, setIsInternalOnlyMode] = useState(false);
   const [autoAdjustLength, setAutoAdjustLength] = useState(false);
   
   // Use persistent project data for variations instead of local state
@@ -1525,19 +1523,6 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
             `;
         }
 
-        let internalModeInstruction = '';
-        if (isInternalOnlyMode) {
-            internalModeInstruction = `
-            *** INTERNAL LLM MODE ACTIVATED ***
-            INSTRUCTIONS: 
-            - Minimize reliance on external API lookup if possible.
-            - FOCUS ON ORIGINALITY: Write highly creative, poetic, and unique lyrics that only a sophisticated LLM can craft.
-            - DO NOT USE CLICHES.
-            - If API response is slow or key error occurs, IMMEDIATELY switch to full standalone logic and complete the draft yourself.
-            - Use your own internal knowledge of musical structure and emotional resonance.
-            `;
-        }
-
         const referenceInfo = project.referenceSongTitle
             ? `Reference Vibe/Flow: Make the lyrics and rhythm reminiscent of the song "${project.referenceSongTitle}" by ${project.referenceArtist || 'Unknown Artist'}. Capture its emotional tone and rhythmic delivery.`
             : '';
@@ -1556,7 +1541,6 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
           Negative Constraints (DO NOT INCLUDE): ${project.excludedThemes || 'None'}.
           
           ${danceModeInstruction}
-          ${internalModeInstruction}
           
           ${introInstruction}
           ${referenceInfo}
@@ -1583,8 +1567,7 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
         
         onUpdate({ lyrics: response.text });
     } catch (e) {
-        alert('Failed to generate lyrics. Switching to fallback generation...');
-        // Fallback or "Internal Only" retry mechanism could go here
+        alert('Failed to generate lyrics');
     }
     setLoading(false);
   };
@@ -1725,19 +1708,6 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
                 <div style={{ fontSize: '13px', fontWeight: 'bold', color: isDanceMode ? '#10b981' : (legibilityMode ? '#FFFFFF' : '#f9fafb') }}>Dance Mode (8-count)</div>
                 <div style={{ width: '36px', height: '20px', backgroundColor: isDanceMode ? '#10b981' : '#4b5563', borderRadius: '10px', position: 'relative' }}>
                     <div style={{ width: '16px', height: '16px', backgroundColor: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: isDanceMode ? '18px' : '2px', transition: 'left 0.2s' }} />
-                </div>
-            </div>
-
-            <div 
-                onClick={() => setIsInternalOnlyMode(!isInternalOnlyMode)}
-                style={{ padding: '12px', backgroundColor: '#1f2937', borderRadius: '8px', border: isInternalOnlyMode ? '1px solid #8b5cf6' : '1px solid #374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-            >
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: isInternalOnlyMode ? '#8b5cf6' : (legibilityMode ? '#FFFFFF' : '#f9fafb') }}>Internal LLM Mode</div>
-                    <div style={{ fontSize: '10px', color: '#9ca3af' }}>독창성 강화 & API 독립 모드</div>
-                </div>
-                 <div style={{ width: '36px', height: '20px', backgroundColor: isInternalOnlyMode ? '#8b5cf6' : '#4b5563', borderRadius: '10px', position: 'relative' }}>
-                    <div style={{ width: '16px', height: '16px', backgroundColor: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: isInternalOnlyMode ? '18px' : '2px', transition: 'left 0.2s' }} />
                 </div>
             </div>
 
@@ -2767,6 +2737,7 @@ const ArtTab = ({ project, onUpdate, legibilityMode }: any) => {
             const posY = (textOverlay.y / 100) * canvas.height;
             
             // Adjust Font Size (scale based on canvas vs preview UI)
+            // Assuming UI preview max width is roughly 600px
             const scaleFactor = canvas.width / 600; 
             const scaledSize = textOverlay.size * scaleFactor;
             
@@ -2776,6 +2747,7 @@ const ArtTab = ({ project, onUpdate, legibilityMode }: any) => {
             // Apply Shadow Effect if present
             if ((style as any).textShadow) {
                 const shadow = (style as any).textShadow as string;
+                // Parse "2px 2px 4px rgba(0,0,0,0.5)"
                 const parts = shadow.split(',')[0].trim().split(' ');
                 ctx.shadowBlur = parseFloat(parts[2] || '0');
                 ctx.shadowOffsetX = parseFloat(parts[0] || '0');
@@ -2799,7 +2771,7 @@ const ArtTab = ({ project, onUpdate, legibilityMode }: any) => {
             // B. Draw Artist (below title)
             const artistSize = scaledSize * 0.5;
             ctx.font = `${artistSize}px ${fontType}`;
-            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; 
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; // Clear shadow for subtext unless desired
             ctx.fillText(artistName, posX, posY + (scaledSize * 0.7));
 
             // 3. Finalize Download
@@ -2883,6 +2855,7 @@ const ArtTab = ({ project, onUpdate, legibilityMode }: any) => {
             } else if (generationMode === 'PROMPT_ONLY') {
                 setGeneratedPrompt(prompt);
             } else if (generationMode === 'MOCK') {
+                // Mock Generation using Canvas
                 const canvas = document.createElement('canvas');
                 let width = 1024;
                 let height = 1024;
@@ -3502,6 +3475,7 @@ const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMo
                 )}
             </div>
             <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {/* Key Management Button */}
                 <button 
                     onClick={onOpenKeyManager}
                     style={{ 
@@ -3517,6 +3491,7 @@ const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMo
                     Key
                 </button>
 
+                {/* Legibility Mode Toggle */}
                 <button 
                     onClick={onToggleLegibility}
                     style={{ 
@@ -3555,7 +3530,7 @@ const App = () => {
     const [view, setView] = useState<ViewState>('DASHBOARD');
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [showKeyManager, setShowKeyManager] = useState(true); 
+    const [showKeyManager, setShowKeyManager] = useState(true); // Start with key manager to check key
     const [legibilityMode, setLegibilityMode] = useState(() => {
         const saved = localStorage.getItem('suno_legibility_mode');
         return saved === 'true';
@@ -3664,6 +3639,7 @@ const App = () => {
         const saved = localStorage.getItem('suno_projects');
         if (saved) setProjects(JSON.parse(saved));
         
+        // If API Key already exists and is tested, we can hide the manager
         const key = localStorage.getItem('suno_pro_api_key');
         if (key) setShowKeyManager(false);
     }, []);
