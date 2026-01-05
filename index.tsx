@@ -2710,14 +2710,80 @@ const ArtTab = ({ project, onUpdate, legibilityMode }: any) => {
     }, [project.title]);
 
     const handleDownload = () => {
-        if (project.coverImage) {
+        if (!project.coverImage) return;
+
+        // --- Synthetic Rendering for Download (Canvas Based) ---
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // 1. Draw Background
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // 2. Configure Text Styles
+            const currentEffect = TEXT_EFFECT_OPTIONS.find(e => e.id === textEffect);
+            const style = currentEffect?.style || {};
+            
+            // Text Color
+            ctx.fillStyle = (style as any).color || textColor;
+            
+            // Position calc (relative to canvas size)
+            const posX = (textOverlay.x / 100) * canvas.width;
+            const posY = (textOverlay.y / 100) * canvas.height;
+            
+            // Adjust Font Size (scale based on canvas vs preview UI)
+            // Assuming UI preview max width is roughly 600px
+            const scaleFactor = canvas.width / 600; 
+            const scaledSize = textOverlay.size * scaleFactor;
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Apply Shadow Effect if present
+            if ((style as any).textShadow) {
+                const shadow = (style as any).textShadow as string;
+                // Parse "2px 2px 4px rgba(0,0,0,0.5)"
+                const parts = shadow.split(',')[0].trim().split(' ');
+                ctx.shadowBlur = parseFloat(parts[2] || '0');
+                ctx.shadowOffsetX = parseFloat(parts[0] || '0');
+                ctx.shadowOffsetY = parseFloat(parts[1] || '0');
+                ctx.shadowColor = shadow.includes('rgba') ? shadow.substring(shadow.indexOf('rgba')) : 'rgba(0,0,0,0.5)';
+            }
+
+            // Apply Outline Effect if present
+            if ((style as any).WebkitTextStroke) {
+                const stroke = (style as any).WebkitTextStroke as string;
+                const parts = stroke.split(' ');
+                ctx.strokeStyle = parts[1] || 'black';
+                ctx.lineWidth = (parseFloat(parts[0]) || 1) * scaleFactor * 2;
+            }
+
+            // A. Draw Title
+            ctx.font = `bold ${scaledSize}px ${fontType}`;
+            if ((style as any).WebkitTextStroke) ctx.strokeText(artTitle, posX, posY);
+            ctx.fillText(artTitle, posX, posY);
+
+            // B. Draw Artist (below title)
+            const artistSize = scaledSize * 0.5;
+            ctx.font = `${artistSize}px ${fontType}`;
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; // Clear shadow for subtext unless desired
+            ctx.fillText(artistName, posX, posY + (scaledSize * 0.7));
+
+            // 3. Finalize Download
+            const dataUrl = canvas.toDataURL("image/png");
             const link = document.createElement('a');
-            link.href = project.coverImage;
-            link.download = `${project.title.replace(/\s+/g, '_') || 'cover_art'}.png`;
+            link.href = dataUrl;
+            link.download = `${project.title.replace(/\s+/g, '_') || 'album_cover'}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
+        };
+        img.src = project.coverImage;
     };
 
     const generateCoverArt = async () => {
