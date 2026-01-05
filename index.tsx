@@ -489,7 +489,7 @@ const STRUCTURE_TEMPLATES = {
       { type: 'Chorus', description: 'Powerful Unison', duration: 16 },
       { type: 'Drop', description: 'Dance Break (Instrumental)', duration: 16 },
       { type: 'Bridge', description: 'High Note Ad-lib', duration: 8 },
-      { type: 'Chorus', description: 'Final Chorus', duration: 16 },
+      { type: 'Chorus', duration: 16, description: 'Final Chorus' },
       { type: 'Outro', description: 'Heavy Breathing', duration: 4 }
   ],
   'Summer Song (Cool)': [
@@ -1587,10 +1587,10 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
           ${project.djName ? `- IMPORTANT: Include a shoutout to "${project.djName}" in EITHER the [Intro] OR the [Outro]. Choose ONE location only. Do NOT repeat it.` : ''}
         `;
 
+        // 무료 API 키 등급을 고려하여 gemini-3-flash-preview 모델 사용 및 thinkingConfig 제거
         const response: any = await getGenAI().models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: { thinkingConfig: { thinkingBudget: 2048 } } 
+            model: 'gemini-3-flash-preview',
+            contents: prompt
         });
         
         onUpdate({ lyrics: response.text });
