@@ -1,30 +1,109 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI, Type } from "@google/genai";
 
-// --- Encryption Helpers (Simple XOR for demonstration) ---
-const encryptKey = (key: string) => {
-    const salt = "suno_studio_pro_salt";
-    return btoa(key.split('').map((char, i) => 
-        String.fromCharCode(char.charCodeAt(0) ^ salt.charCodeAt(i % salt.length))
-    ).join(''));
-};
-
-const decryptKey = (encoded: string) => {
-    try {
-        const salt = "suno_studio_pro_salt";
-        const decoded = atob(encoded);
-        return decoded.split('').map((char, i) => 
-            String.fromCharCode(char.charCodeAt(0) ^ salt.charCodeAt(i % salt.length))
-        ).join('');
-    } catch (e) { return ""; }
-};
+// --- Encryption Helper (Simple Base64 for Local Storage Obfuscation as requested) ---
+const encryptKey = (key: string) => btoa(key);
+const decryptKey = (encoded: string) => atob(encoded);
 
 // --- Configuration ---
 const getGenAI = () => {
-    const savedKey = localStorage.getItem('user_api_key');
-    const apiKey = savedKey ? decryptKey(savedKey) : process.env.API_KEY;
-    return new GoogleGenAI({ apiKey: apiKey || "" });
+  const savedKey = localStorage.getItem('suno_pro_api_key');
+  const apiKey = savedKey ? decryptKey(savedKey) : process.env.API_KEY;
+  return new GoogleGenAI({ apiKey: apiKey as string });
+};
+
+// --- API Key Management Popup Component ---
+const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
+  const [keyInput, setKeyInput] = useState('');
+  const [status, setStatus] = useState<'IDLE' | 'TESTING' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [savedKeyExists, setSavedKeyExists] = useState(false);
+
+  useEffect(() => {
+    const key = localStorage.getItem('suno_pro_api_key');
+    if (key) setSavedKeyExists(true);
+  }, []);
+
+  const testConnection = async (targetKey: string) => {
+    setStatus('TESTING');
+    try {
+      const tempAi = new GoogleGenAI({ apiKey: targetKey });
+      await tempAi.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: 'hi',
+      });
+      setStatus('SUCCESS');
+      localStorage.setItem('suno_pro_api_key', encryptKey(targetKey));
+      setSavedKeyExists(true);
+      setTimeout(() => onOpenApp(), 1000);
+    } catch (e) {
+      console.error(e);
+      setStatus('ERROR');
+    }
+  };
+
+  const handleDelete = () => {
+    localStorage.removeItem('suno_pro_api_key');
+    setSavedKeyExists(false);
+    setKeyInput('');
+    setStatus('IDLE');
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      backdropFilter: 'blur(10px)'
+    }}>
+      <div style={{
+        backgroundColor: '#1f2937', padding: '40px', borderRadius: '24px',
+        width: '450px', border: '1px solid #374151', textAlign: 'center',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔐</div>
+        <h2 style={{ color: 'white', marginBottom: '10px' }}>API Key Management</h2>
+        <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '25px' }}>
+          Gemini API 키를 입력하세요. 입력한 키는 로컬 드라이브에 암호화되어 안전하게 저장됩니다.
+        </p>
+
+        {savedKeyExists ? (
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid #10b981' }}>
+            <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>✅ API 키가 저장되어 있습니다.</p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button onClick={onOpenApp} style={{ flex: 1, padding: '12px', backgroundColor: '#e11d48', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>앱 시작하기</button>
+              <button onClick={handleDelete} style={{ padding: '12px', backgroundColor: '#374151', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer' }}>삭제</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <input
+              type="password"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder="Enter your Gemini API Key"
+              style={{ padding: '15px', backgroundColor: '#111827', border: '1px solid #4b5563', color: 'white', borderRadius: '10px' }}
+            />
+            <button
+              onClick={() => testConnection(keyInput)}
+              disabled={status === 'TESTING' || !keyInput}
+              style={{
+                padding: '15px', backgroundColor: status === 'SUCCESS' ? '#10b981' : '#e11d48',
+                color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              {status === 'TESTING' ? '연결 테스트 중...' : status === 'SUCCESS' ? '연결 성공!' : '연결 및 저장'}
+            </button>
+            {status === 'ERROR' && <p style={{ color: '#ef4444', fontSize: '12px' }}>유효하지 않은 키이거나 연결에 실패했습니다.</p>}
+          </div>
+        )}
+        <p style={{ marginTop: '20px', fontSize: '11px', color: '#6b7280' }}>
+          * 저장된 키는 브라우저의 LocalStorage에 암호화된 상태로 보관됩니다.
+        </p>
+      </div>
+    </div>
+  );
 };
 
 // --- Responsive CSS Injection ---
@@ -489,7 +568,7 @@ const STRUCTURE_TEMPLATES = {
       { type: 'Chorus', description: 'Powerful Unison', duration: 16 },
       { type: 'Drop', description: 'Dance Break (Instrumental)', duration: 16 },
       { type: 'Bridge', description: 'High Note Ad-lib', duration: 8 },
-      { type: 'Chorus', duration: 16, description: 'Final Chorus' },
+      { type: 'Chorus', description: 'Final Chorus', duration: 16 },
       { type: 'Outro', description: 'Heavy Breathing', duration: 4 }
   ],
   'Summer Song (Cool)': [
@@ -752,113 +831,6 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
         </div>
     </div>
   );
-};
-
-// --- API Key Management Popup ---
-const ApiKeyModal = ({ onClose }: { onClose: () => void }) => {
-    const [tempKey, setTempKey] = useState("");
-    const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-    const [errorMessage, setErrorMessage] = useState("");
-
-    useEffect(() => {
-        const saved = localStorage.getItem('user_api_key');
-        if (saved) setTempKey(decryptKey(saved));
-    }, []);
-
-    const handleTest = async () => {
-        setTestStatus('testing');
-        setErrorMessage("");
-        try {
-            const ai = new GoogleGenAI({ apiKey: tempKey });
-            const response: any = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: "Connection test. Respond with 'ok'.",
-            });
-            if (response.text.toLowerCase().includes('ok')) {
-                setTestStatus('success');
-            } else {
-                setTestStatus('error');
-                setErrorMessage("Unexpected response from AI.");
-            }
-        } catch (e: any) {
-            setTestStatus('error');
-            setErrorMessage(e.message || "Invalid API Key or Network Error.");
-        }
-    };
-
-    const handleSave = () => {
-        if (!tempKey.trim()) {
-            localStorage.removeItem('user_api_key');
-            alert("API Key removed from local storage.");
-        } else {
-            localStorage.setItem('user_api_key', encryptKey(tempKey));
-            alert("API Key encrypted and saved to your browser's local storage.");
-        }
-        onClose();
-        window.location.reload(); // Refresh to apply new key
-    };
-
-    return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)', zIndex: 6000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backdropFilter: 'blur(8px)'
-        }} onClick={onClose}>
-            <div style={{
-                backgroundColor: '#1f2937', width: '450px', maxWidth: '90vw',
-                borderRadius: '16px', border: '1px solid #374151', display: 'flex', flexDirection: 'column',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', padding: '30px'
-            }} onClick={e => e.stopPropagation()}>
-                <h2 style={{ margin: '0 0 20px 0', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}>
-                    <span className="material-symbols-outlined" style={{ color: '#e11d48' }}>key</span>
-                    Gemini API Key 관리
-                </h2>
-                <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', marginBottom: '20px' }}>
-                    Gemini API 키를 입력하세요. 입력하신 키는 브라우저의 <strong>로컬 스토리지(내 컴퓨터)에 암호화</strong>되어 안전하게 저장되며, 제작자에게 전송되지 않습니다.
-                </p>
-                <div style={{ marginBottom: '25px' }}>
-                    <label style={{ display: 'block', color: '#d1d5db', fontSize: '12px', marginBottom: '8px' }}>Google AI API Key</label>
-                    <input 
-                        type="password" 
-                        value={tempKey} 
-                        onChange={(e) => setTempKey(e.target.value)}
-                        placeholder="AIzaSy..."
-                        style={{ width: '100%', padding: '12px', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', color: 'white', boxSizing: 'border-box' }}
-                    />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <button 
-                        onClick={handleTest}
-                        disabled={testStatus === 'testing' || !tempKey}
-                        style={{ 
-                            padding: '12px', borderRadius: '8px', border: '1px solid #4b5563', 
-                            backgroundColor: '#374151', color: 'white', cursor: 'pointer', fontWeight: 'bold',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
-                        }}
-                    >
-                        {testStatus === 'testing' ? '연결 테스트 중...' : '연결 테스트 (Connection Test)'}
-                        {testStatus === 'success' && <span className="material-symbols-outlined" style={{ color: '#10b981' }}>check_circle</span>}
-                        {testStatus === 'error' && <span className="material-symbols-outlined" style={{ color: '#ef4444' }}>error</span>}
-                    </button>
-
-                    {testStatus === 'error' && <p style={{ color: '#ef4444', fontSize: '11px', textAlign: 'center', margin: 0 }}>{errorMessage}</p>}
-                    {testStatus === 'success' && <p style={{ color: '#10b981', fontSize: '11px', textAlign: 'center', margin: 0 }}>성공! API가 정상적으로 작동합니다.</p>}
-
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <button onClick={onClose} style={{ flex: 1, padding: '12px', background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>취소</button>
-                        <button 
-                            onClick={handleSave} 
-                            style={{ flex: 1, padding: '12px', backgroundColor: '#e11d48', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                            저장 및 적용
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 };
 
 // --- TAB: Concept ---
@@ -1587,10 +1559,10 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
           ${project.djName ? `- IMPORTANT: Include a shoutout to "${project.djName}" in EITHER the [Intro] OR the [Outro]. Choose ONE location only. Do NOT repeat it.` : ''}
         `;
 
-        // 무료 API 키 등급을 고려하여 gemini-3-flash-preview 모델 사용 및 thinkingConfig 제거
         const response: any = await getGenAI().models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: prompt
+            model: 'gemini-3-pro-preview',
+            contents: prompt,
+            config: { thinkingConfig: { thinkingBudget: 2048 } } 
         });
         
         onUpdate({ lyrics: response.text });
@@ -3420,7 +3392,7 @@ const Dashboard = ({ projects, onCreate, onOpen, onDelete, onExport, legibilityM
   );
 };
 
-const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMode, onToggleLegibility, onOpenApiKey }: any) => {
+const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMode, onToggleLegibility, onOpenKeyManager }: any) => {
     return (
         <div className="app-header" style={{ height: '60px', backgroundColor: '#111827', borderBottom: '1px solid #374151', display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between', boxSizing: 'border-box' }}>
             <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -3437,19 +3409,20 @@ const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMo
                 )}
             </div>
             <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {/* API Key Management */}
+                {/* Key Management Button */}
                 <button 
-                    onClick={onOpenApiKey}
+                    onClick={onOpenKeyManager}
                     style={{ 
                         padding: '6px 12px', 
-                        backgroundColor: '#1f2937', 
+                        backgroundColor: '#374151', 
                         color: '#fbbf24', 
-                        border: '1px solid #fbbf24', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+                        border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
                         fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'
                     }}
+                    title="Manage API Key"
                 >
                     <Icon name="key" />
-                    API 설정
+                    Key
                 </button>
 
                 {/* Legibility Mode Toggle */}
@@ -3491,7 +3464,7 @@ const App = () => {
     const [view, setView] = useState<ViewState>('DASHBOARD');
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+    const [showKeyManager, setShowKeyManager] = useState(true); // Start with key manager to check key
     const [legibilityMode, setLegibilityMode] = useState(() => {
         const saved = localStorage.getItem('suno_legibility_mode');
         return saved === 'true';
@@ -3599,6 +3572,10 @@ const App = () => {
     useEffect(() => {
         const saved = localStorage.getItem('suno_projects');
         if (saved) setProjects(JSON.parse(saved));
+        
+        // If API Key already exists and is tested, we can hide the manager
+        const key = localStorage.getItem('suno_pro_api_key');
+        if (key) setShowKeyManager(false);
     }, []);
 
     const activeProject = projects.find(p => p.id === currentProjectId);
@@ -3606,6 +3583,9 @@ const App = () => {
     return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: legibilityMode ? "'Inter', sans-serif" : "'Inter', sans-serif", backgroundColor: '#111827', color: 'white' }}>
             <style dangerouslySetInnerHTML={{ __html: responsiveGlobalStyles }} />
+            
+            {showKeyManager && <ApiKeyManagerPopup onOpenApp={() => setShowKeyManager(false)} />}
+            
             <Header 
                 view={view} 
                 project={activeProject} 
@@ -3615,7 +3595,7 @@ const App = () => {
                 onRemix={handleRemix}
                 legibilityMode={legibilityMode}
                 onToggleLegibility={toggleLegibility}
-                onOpenApiKey={() => setShowApiKeyModal(true)}
+                onOpenKeyManager={() => setShowKeyManager(true)}
             />
             <div style={{ flex: 1, overflow: 'hidden' }}>
                 {view === 'DASHBOARD' && (
@@ -3638,7 +3618,6 @@ const App = () => {
                     />
                 )}
             </div>
-            {showApiKeyModal && <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />}
         </div>
     );
 };
