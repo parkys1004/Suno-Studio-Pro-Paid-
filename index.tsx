@@ -762,7 +762,7 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
             <div style={{ padding: '20px', borderBottom: '1px solid #374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}>
                     <span className="material-symbols-outlined" style={{ color: '#fbbf24' }}>menu_book</span>
-                    Suno Studio Pro 사용 매뉴얼
+                    Suno Studio Pro V1.0 사용 매뉴얼
                 </h2>
                 <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>
                     <span className="material-symbols-outlined">close</span>
@@ -774,7 +774,7 @@ const ManualModal = ({ onClose }: { onClose: () => void }) => {
                     <p>새로운 음악 프로젝트를 생성하고 관리하는 공간입니다.</p>
                     <ul style={{ paddingLeft: '20px', color: '#d1d5db', fontSize: '14px' }}>
                         <li><strong>New Project:</strong> 장르(K-Pop, Ballad 등), 무드, 제목을 설정하여 프로젝트를 생성합니다.</li>
-                        <li><strong>프로젝트 관리:</strong> 생성된 프로젝트를 클릭하여 편집하거나, JSON 파일로 내보내기/삭제가 가능합니다.</li>
+                        <li><strong>프로젝트 관리:</strong> 클릭하여 편집하거나, JSON 파일로 내보내기/삭제가 가능합니다.</li>
                     </ul>
                 </section>
 
@@ -3464,7 +3464,7 @@ const Header = ({ view, project, onBack, onSave, onImport, onRemix, legibilityMo
             <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={onBack}>
                     <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#e11d48' }}>piano</span>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: legibilityMode ? '#FFFFFF' : 'white' }}>Suno Studio Pro</span>
+                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: legibilityMode ? '#FFFFFF' : 'white' }}>Suno Studio Pro V1.0</span>
                 </div>
                 {view === 'STUDIO' && project && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderLeft: '1px solid #374151', paddingLeft: '15px', marginLeft: '5px' }}>
