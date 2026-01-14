@@ -17,7 +17,12 @@ const getGenAI = () => {
 // --- API Key Management Popup Component ---
 const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
   const [keyInput, setKeyInput] = useState('');
-  const [status, setStatus] = useState<'IDLE' | 'TESTING' | 'SUCCESS' | 'ERROR'>('IDLE');
+  const [status, setStatus] = useState<'IDLE' | 'TESTING' | 'SUCCESS' | 'PARTIAL_SUCCESS' | 'ERROR'>('IDLE');
+  const [caps, setCaps] = useState({
+      text: 'IDLE',
+      image: 'IDLE',
+      pro: 'IDLE'
+  });
   const [savedKeyExists, setSavedKeyExists] = useState(false);
 
   useEffect(() => {
@@ -27,19 +32,50 @@ const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
 
   const testConnection = async (targetKey: string) => {
     setStatus('TESTING');
+    setCaps({ text: 'CHECKING', image: 'CHECKING', pro: 'CHECKING' });
+    
     try {
       const tempAi = new GoogleGenAI({ apiKey: targetKey });
-      await tempAi.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: 'hi',
-      });
-      setStatus('SUCCESS');
-      localStorage.setItem('suno_pro_api_key', encryptKey(targetKey));
-      setSavedKeyExists(true);
-      setTimeout(() => onOpenApp(), 1000);
+      
+      // Define checks for 3 core models
+      const checkText = tempAi.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: 'hi',
+      }).then(() => 'SUCCESS').catch(() => 'ERROR');
+
+      const checkImage = tempAi.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: 'a dot',
+      }).then(() => 'SUCCESS').catch(() => 'ERROR');
+      
+      const checkPro = tempAi.models.generateContent({
+          model: 'gemini-3-pro-image-preview',
+          contents: 'a dot',
+      }).then(() => 'SUCCESS').catch(() => 'ERROR');
+
+      // Execute in parallel
+      const [textRes, imageRes, proRes] = await Promise.all([checkText, checkImage, checkPro]);
+      
+      setCaps({ text: textRes as any, image: imageRes as any, pro: proRes as any });
+
+      if (textRes === 'SUCCESS') {
+          // At least text works, save key
+          localStorage.setItem('suno_pro_api_key', encryptKey(targetKey));
+          setSavedKeyExists(true);
+          
+          if (imageRes === 'SUCCESS' && proRes === 'SUCCESS') {
+              setStatus('SUCCESS');
+              setTimeout(() => onOpenApp(), 1200);
+          } else {
+              setStatus('PARTIAL_SUCCESS');
+          }
+      } else {
+          setStatus('ERROR');
+      }
     } catch (e) {
       console.error(e);
       setStatus('ERROR');
+      setCaps({ text: 'ERROR', image: 'ERROR', pro: 'ERROR' });
     }
   };
 
@@ -48,7 +84,24 @@ const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
     setSavedKeyExists(false);
     setKeyInput('');
     setStatus('IDLE');
+    setCaps({ text: 'IDLE', image: 'IDLE', pro: 'IDLE' });
   };
+
+  const StatusRow = ({ label, status }: { label: string, status: string }) => (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: '#374151', borderRadius: '8px', marginBottom: '8px', border: '1px solid #4b5563' }}>
+          <span style={{ fontSize: '13px', color: '#e5e7eb', fontWeight: '500' }}>{label}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {status === 'CHECKING' && <span className="material-symbols-outlined" style={{ fontSize: '18px', animation: 'spin 1s linear infinite' }}>sync</span>}
+              {status === 'SUCCESS' && <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#10b981' }}>check_circle</span>}
+              {status === 'ERROR' && <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ef4444' }}>cancel</span>}
+              {status === 'IDLE' && <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#6b7280' }}>radio_button_unchecked</span>}
+              
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: status === 'SUCCESS' ? '#10b981' : (status === 'ERROR' ? '#ef4444' : '#9ca3af') }}>
+                  {status === 'CHECKING' ? '확인 중...' : (status === 'SUCCESS' ? '활성화됨' : (status === 'ERROR' ? '권한 없음' : '대기'))}
+              </span>
+          </div>
+      </div>
+  );
 
   return (
     <div style={{
@@ -59,16 +112,16 @@ const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
     }}>
       <div style={{
         backgroundColor: '#1f2937', padding: '40px', borderRadius: '24px',
-        width: '450px', border: '1px solid #374151', textAlign: 'center',
+        width: '500px', border: '1px solid #374151', textAlign: 'center',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
       }}>
         <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔐</div>
         <h2 style={{ color: 'white', marginBottom: '10px' }}>API Key Management</h2>
         <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '25px' }}>
-          Gemini API 키를 입력하세요. 입력한 키는 로컬 드라이브에 암호화되어 안전하게 저장됩니다.
+          Gemini API 키를 입력하세요. 핵심 기능에 대한 접근 권한을 자동으로 테스트합니다.
         </p>
 
-        {savedKeyExists ? (
+        {savedKeyExists && status === 'IDLE' ? (
           <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid #10b981' }}>
             <p style={{ color: '#10b981', margin: 0, fontWeight: 'bold' }}>✅ API 키가 저장되어 있습니다.</p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -83,19 +136,40 @@ const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
               placeholder="Enter your Gemini API Key"
+              disabled={status === 'TESTING'}
               style={{ padding: '15px', backgroundColor: '#111827', border: '1px solid #4b5563', color: 'white', borderRadius: '10px' }}
             />
+            
+            {(status === 'TESTING' || status === 'SUCCESS' || status === 'PARTIAL_SUCCESS' || status === 'ERROR') && (
+                <div style={{ marginTop: '5px', marginBottom: '5px' }}>
+                    <StatusRow label="기본 텍스트/추론 (Text & Reasoning)" status={caps.text} />
+                    <StatusRow label="일반 이미지 생성 (Image Gen)" status={caps.image} />
+                    <StatusRow label="Pro 고해상도 이미지 (Pro Image)" status={caps.pro} />
+                </div>
+            )}
+
             <button
               onClick={() => testConnection(keyInput)}
               disabled={status === 'TESTING' || !keyInput}
               style={{
-                padding: '15px', backgroundColor: status === 'SUCCESS' ? '#10b981' : '#e11d48',
-                color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'
+                padding: '15px', backgroundColor: status === 'SUCCESS' ? '#10b981' : (status === 'PARTIAL_SUCCESS' ? '#f59e0b' : '#e11d48'),
+                color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer',
+                opacity: status === 'TESTING' ? 0.7 : 1
               }}
             >
-              {status === 'TESTING' ? '연결 테스트 중...' : status === 'SUCCESS' ? '연결 성공!' : '연결 및 저장'}
+              {status === 'TESTING' ? '기능 테스트 중...' : 
+               status === 'SUCCESS' ? '모든 기능 연결 성공!' : 
+               status === 'PARTIAL_SUCCESS' ? '일부 기능 제한됨 (앱 시작)' : 
+               '연결 및 저장'}
             </button>
-            {status === 'ERROR' && <p style={{ color: '#ef4444', fontSize: '12px' }}>유효하지 않은 키이거나 연결에 실패했습니다.</p>}
+            
+            {status === 'PARTIAL_SUCCESS' && (
+                <button onClick={onOpenApp} style={{ padding: '12px', backgroundColor: '#374151', color: 'white', border: '1px solid #6b7280', borderRadius: '8px', cursor: 'pointer' }}>
+                    제한된 기능으로 시작하기
+                </button>
+            )}
+
+            {status === 'ERROR' && <p style={{ color: '#ef4444', fontSize: '12px' }}>API 키가 유효하지 않거나 연결에 실패했습니다.</p>}
           </div>
         )}
         <p style={{ marginTop: '20px', fontSize: '11px', color: '#6b7280' }}>
@@ -108,6 +182,7 @@ const ApiKeyManagerPopup = ({ onOpenApp }: { onOpenApp: () => void }) => {
 
 // --- Responsive CSS Injection ---
 const responsiveGlobalStyles = `
+  @keyframes spin { 100% { transform: rotate(360deg); } }
   body { overflow-x: hidden; width: 100%; position: relative; }
   #root { width: 100%; overflow-x: hidden; }
   
