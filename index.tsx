@@ -1554,6 +1554,9 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
   const [loadingVariations, setLoadingVariations] = useState(false);
   const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null);
 
+  // NEW: Model Selection State (Default: Gemini 3 Pro)
+  const [selectedModel, setSelectedModel] = useState<'gemini-3-pro-preview' | 'gemini-3-flash-preview'>('gemini-3-pro-preview');
+
   const generateLyrics = async () => {
     setLoading(true);
     try {
@@ -1634,10 +1637,17 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
           ${project.djName ? `- IMPORTANT: Include a shoutout to "${project.djName}" in EITHER the [Intro] OR the [Outro]. Choose ONE location only. Do NOT repeat it.` : ''}
         `;
 
+        // NEW: Conditional Config based on selected model
+        const modelConfig: any = {};
+        // Apply thinking config only for Pro model as Flash doesn't support it or doesn't need it
+        if (selectedModel === 'gemini-3-pro-preview') {
+            modelConfig.thinkingConfig = { thinkingBudget: 2048 };
+        }
+
         const response: any = await getGenAI().models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: selectedModel, // NEW: Use selected model variable
             contents: prompt,
-            config: { thinkingConfig: { thinkingBudget: 2048 } } 
+            config: modelConfig // NEW: Apply config
         });
         
         onUpdate({ lyrics: response.text });
@@ -1808,6 +1818,41 @@ const LyricsTab = ({ project, onUpdate, legibilityMode }: any) => {
 
             <div style={{ marginTop: '10px', paddingTop: '10px', fontSize: '13px', color: labelColor, borderTop: '1px solid #374151' }}>
                 <span>BPM: {project.bpm} ({project.bpm >= 105 ? 'Fast' : 'Slow'})</span>
+            </div>
+         </div>
+
+         {/* NEW: Model Selection UI */}
+         <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: labelColor, marginBottom: '8px' }}>모델 선택 (AI Model)</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                    onClick={() => setSelectedModel('gemini-3-pro-preview')}
+                    style={{
+                        flex: 1, padding: '10px', borderRadius: '6px',
+                        border: selectedModel === 'gemini-3-pro-preview' ? '1px solid #e11d48' : '1px solid #4b5563',
+                        backgroundColor: selectedModel === 'gemini-3-pro-preview' ? 'rgba(225, 29, 72, 0.15)' : '#1f2937',
+                        color: selectedModel === 'gemini-3-pro-preview' ? '#e11d48' : '#9ca3af',
+                        fontSize: '12px', cursor: 'pointer', fontWeight: 'bold',
+                        transition: 'all 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'
+                    }}
+                >
+                    Gemini 3 Pro
+                    <span style={{ fontSize: '10px', fontWeight: 'normal', opacity: 0.8 }}>Reasoning (High Quality)</span>
+                </button>
+                <button
+                    onClick={() => setSelectedModel('gemini-3-flash-preview')}
+                    style={{
+                        flex: 1, padding: '10px', borderRadius: '6px',
+                        border: selectedModel === 'gemini-3-flash-preview' ? '1px solid #fbbf24' : '1px solid #4b5563',
+                        backgroundColor: selectedModel === 'gemini-3-flash-preview' ? 'rgba(251, 191, 36, 0.15)' : '#1f2937',
+                        color: selectedModel === 'gemini-3-flash-preview' ? '#fbbf24' : '#9ca3af',
+                        fontSize: '12px', cursor: 'pointer', fontWeight: 'bold',
+                        transition: 'all 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'
+                    }}
+                >
+                    Gemini 3 Flash
+                    <span style={{ fontSize: '10px', fontWeight: 'normal', opacity: 0.8 }}>Fast (Low Cost)</span>
+                </button>
             </div>
          </div>
 
